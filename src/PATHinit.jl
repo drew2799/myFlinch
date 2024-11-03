@@ -120,16 +120,16 @@ LogDensityProblems.logdensity(p::PF_LogTargetDensity, θ) = -nℓπ(θ)
 
 PF_problem = ADgradient(:Zygote, PF_LogTargetDensity(d))
 
-PF_seed = rand(Int, 1)
-#Random.seed!(PF_seed[1])
-PFinit_θ = Vector{Vector{Float64}}(undef, 5)
-for i in 1:5
-    PFinit_θ[i] = rand(MvNormal(start_θ,0.1*I))
-end
-
+PF_seed = rand(1:10_000)
+Random.seed!(PF_seed)
+#PFinit_θ = Vector{Vector{Float64}}(undef, 5)
+#for i in 1:5
+#    PFinit_θ[i] = rand(MvNormal(start_θ,I))
+#end
+PFinit_θ = rand(MvNormal(start_θ,I))
 MPI.Barrier(comm)
 t0 = time()
-result = multipathfinder(PF_problem, 10; init=PFinit_θ)
+result = pathfinder(PF_problem, ndraws=10, init=PFinit_θ)
 PF_t = time()-t0
 
 #Checking goodness of PF initialization
