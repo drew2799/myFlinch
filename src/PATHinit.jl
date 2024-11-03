@@ -45,7 +45,7 @@ prefix = randstring(5)
 seed = 1123
 
 #   RESOLUTION PARAMETERS
-nside = 64
+nside = 256
 lmax = 2*nside - 1
 
 MPI.Init()
