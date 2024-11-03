@@ -121,7 +121,7 @@ LogDensityProblems.logdensity(p::PF_LogTargetDensity, θ) = -nℓπ(θ)
 PF_problem = ADgradient(:Zygote, PF_LogTargetDensity(d))
 
 PF_seed = rand(Int, 1)
-Random.seed!(PF_seed[1])
+#Random.seed!(PF_seed[1])
 PFinit_θ = Vector{Vector{Float64}}(undef, 5)
 for i in 1:5
     PFinit_θ[i] = rand(MvNormal(start_θ,0.1*I))
