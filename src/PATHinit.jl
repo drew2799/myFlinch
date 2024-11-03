@@ -40,6 +40,8 @@ include("utils.jl")
 include("inference_model.jl")
 include("neglogproblem.jl")
 
+prefix = randstring(5)
+
 seed = 1123
 
 #   RESOLUTION PARAMETERS
@@ -52,7 +54,7 @@ comm = MPI.COMM_WORLD
 crank = MPI.Comm_rank(comm)
 csize = MPI.Comm_size(comm)
 root = 0
-ncore = 64
+ncore = 32
 
 #   REALIZATION MAP
 realiz_Cl, realiz_HAlm, realiz_HMap = Realization("Capse_fiducial_Dl.csv", nside, lmax, seed)
@@ -100,20 +102,14 @@ helper_DMap = deepcopy(gen_DMap)
 nlp = nℓπ(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, Bl=Bl, Pl=Pl, ncore=ncore, comm=comm, root=root)
 nlp_grad = nℓπ_grad(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, Bl=Bl, Pl=Pl, ncore=ncore, comm=comm, root=root)
 
-## BENCHMARKING POSTERIOR and POSTERIOR+GRADIENTS TIMINGS
-
-MPI.Barrier(comm)
-
-nlp_bm = @be nℓπ(start_θ) samples=1000 evals=50 seconds=Inf
-
-MPI.Barrier(comm)
-
-nlp_grad_bm = @be nℓπ_grad(start_θ) samples=1000 evals=50 seconds=Inf
-
-print(median(nlp_bm).time, "\n")
-print(median(nlp_grad_bm).time)
-
 #=
+## BENCHMARKING POSTERIOR and POSTERIOR+GRADIENTS TIMINGS
+MPI.Barrier(comm)
+nlp_bm = @be nℓπ(start_θ) samples=1000 evals=50 seconds=Inf
+MPI.Barrier(comm)
+nlp_grad_bm = @be nℓπ_grad(start_θ) samples=1000 evals=50 seconds=Inf
+=#
+
 ## PATHFINDER INITIALIZATION
 struct PF_LogTargetDensity
     dim::Int
@@ -124,9 +120,11 @@ LogDensityProblems.logdensity(p::PF_LogTargetDensity, θ) = -nℓπ(θ)
 
 PF_problem = ADgradient(:Zygote, PF_LogTargetDensity(d))
 
+PF_seed = rand(Int, 1)
+Random.seed!(PF_seed)
 PFinit_θ = Vector{Vector{Float64}}(undef, 5)
 for i in 1:5
-    PFinit_θ[i] = rand(MvNormal(start_θ,0.01*I))
+    PFinit_θ[i] = rand(MvNormal(start_θ,0.1*I))
 end
 
 MPI.Barrier(comm)
@@ -140,7 +138,7 @@ PF_t = time()-t0
 
 #PF_start_θ = mean(result.draws, dims=2)[:,1]
 
-npzwrite("MPI_chains/PATHinit_$nside.npy", result.draws)
+npzwrite("MPI_chains/$(prefix)_PATHinit_$(nside).npy", result.draws)
 
 MPI.Finalize()
-=#
+
