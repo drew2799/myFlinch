@@ -77,7 +77,7 @@ end
 #   Noise
 Random.seed!(1123)
 Bl = gaussbeam(0.001, lmax, pol=false)
-Pl = pixwin(nside, pol=false)[1:lmax+1]
+Pl = [1 for i in 1:lmax+1]# pixwin(nside, pol=false)[1:lmax+1]
 
 ϵ=1
 N = ϵ*ones(nside2npix(nside))
