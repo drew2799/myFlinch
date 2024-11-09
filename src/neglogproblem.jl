@@ -1,15 +1,15 @@
-function nℓπ(θ; data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, Bl=Bl, Pl=Pl, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
+function nℓπ(θ; data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, BP_l=BP_l, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
 
-    nlp = NegLogPosterior(θ, comm, ncore, helper_DMap, data=data, lmax=lmax, nside=nside, invN=invN, Bl=Bl, Pl=Pl, root = root)
+    nlp = NegLogPosterior(θ, comm, ncore, helper_DMap, data=data, lmax=lmax, nside=nside, invN=invN, BP_l=BP_l, root = root)
 
     #if crank == root
     return nlp
     #end
 end
 
-function nℓπ_grad(θ; data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, Bl=Bl, Pl=Pl, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
+function nℓπ_grad(θ; data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, BP_l=BP_l, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
 
-    nlp_grad = gradient(x->NegLogPosterior(x, comm, ncore, helper_DMap, data=data, lmax=lmax, nside=nside, invN=invN, Bl=Bl, Pl=Pl, root=root), θ)
+    nlp_grad = gradient(x->NegLogPosterior(x, comm, ncore, helper_DMap, data=data, lmax=lmax, nside=nside, invN=invN, BP_l=BP_l, root=root), θ)
 
     #if crank == root
     return nlp_grad
