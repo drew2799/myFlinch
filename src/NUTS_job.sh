@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH --account=def-wperciva
+#SBATCH --account=rrg-wperciva
 #SBATCH --job-name=NUTS
 #SBATCH --output=NUTS.out
-#SBATCH --time=80:00:00
+#SBATCH --time=2:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem-per-cpu=50G

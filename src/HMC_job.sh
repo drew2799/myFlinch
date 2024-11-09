@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --account=def-wperciva
-#SBATCH --job-name=HMC_bm
-#SBATCH --output=HMC_bm.out
+#SBATCH --account=rrg-wperciva
+#SBATCH --job-name=HMC
+#SBATCH --output=HMC.out
 #SBATCH --time=1:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=100G
+#SBATCH --mem=50G
 #SBATCH --mail-user=a2crespi@uwaterloo.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 

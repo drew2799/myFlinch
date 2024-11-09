@@ -39,10 +39,11 @@ include("utils.jl")
 include("inference_model.jl")
 include("neglogproblem.jl")
 
-Random.seed!(1123)
+seed = 1123
+Random.seed!(seed)
 
 #   RESOLUTION PARAMETERS
-nside = 512
+nside = 64
 lmax = 2*nside - 1
 
 MPI.Init()
@@ -54,7 +55,7 @@ root = 0
 ncore = 32
 
 #   REALIZATION MAP
-realiz_Cl, realiz_HAlm, realiz_HMap = Realization("Capse_fiducial_Dl.csv", nside, lmax)
+realiz_Cl, realiz_HAlm, realiz_HMap = Realization("Capse_fiducial_Dl.csv", nside, lmax, seed)
 realiz_θ = vcat(x_vecmat2vec(from_healpix_alm_to_alm([realiz_HAlm], lmax, 1, comm, root=root), lmax, 1, comm, root=root), Cl2Kl(realiz_Cl))
 
 d = length(realiz_θ)
@@ -75,8 +76,13 @@ end
 ϵ=1
 N = ϵ*ones(nside2npix(nside))
 N[mask_nside.==1] .= 5*10^4
+#   Gaussian beam and pixel window function
+Bl = gaussbeam(0.001, lmax, pol=false)
+Pl = pixwin(nside, pol=false)[1:lmax+1]
+BP_l = Bl.*Pl
+
 #   Data Map
-gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_HMap, mask_nside, N, nside, lmax)
+gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_Cl, Bl, Pl, mask_nside, N, nside, lmax, seed)
 gen_θ = vcat(x_vecmat2vec(from_healpix_alm_to_alm([gen_HAlm], lmax, 1, comm, root=root), lmax, 1, comm, root=root), Cl2Kl(gen_Cl))
 invN_HMap = HealpixMap{Float64,RingOrder}(1 ./ N)
 
@@ -92,24 +98,22 @@ HealpixMPI.Scatter!(invN_HMap, invN_DMap, comm, clear=true)
 
 helper_DMap = deepcopy(gen_DMap)
 
-nlp = nℓπ(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
-nlp_grad = nℓπ_grad(start_θ, data=gen_DMap,  helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
+nlp = nℓπ(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, BP_l=Bl.*Pl, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
+nlp_grad = nℓπ_grad(start_θ, data=gen_DMap,  helper_DMap=helper_DMap, lmax=lmax, nside=nside, BP_l=Bl.*Pl, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
 
+#=
 ## BENCHMARKING POSTERIOR and POSTERIOR+GRADIENTS TIMINGS
-
 MPI.Barrier(comm)
-
 nlp_bm = @benchmark nℓπ(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
-
 MPI.Barrier(comm)
-
 nlp_grad_bm = @benchmark nℓπ_grad(start_θ, data=gen_DMap,  helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
-
 print(mean(nlp_bm).time)
 print(mean(nlp_grad_bm).time)
-#=
+=#
+
 ## PATHFINDER INITIALIZATION
-PF_start_θ = rand(MvNormal(start_θ,0.01*I))# npzread("MPI_chains/PATHinit_256.npy")[:,end-1]
+prefix = 
+PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity
     dim::Int
@@ -121,7 +125,7 @@ LogDensityProblemsAD.capabilities(::Type{LogTargetDensity}) = LogDensityProblems
 
 ℓπ = LogTargetDensity(d)
 n_LF = 50
-n_samples, n_adapts = 11_000, 10_000
+n_samples, n_adapts = 3_000, 2_000
 
 metric = DiagEuclideanMetric(d)
 ham = Hamiltonian(metric, ℓπ, Zygote)
@@ -144,5 +148,4 @@ HMC_ess, HMC_rhat = Summarize(samples_HMC)
 npzwrite("MPI_chains/mask_HMC_EssRhat_nside_$nside.npy", [HMC_ess HMC_rhat])
 npzwrite("MPI_chains/mask_HMC_SumPerf_nside_$nside.npy", [HMC_t mean(HMC_ess) median(HMC_rhat)])
 
-=#
 MPI.Finalize()

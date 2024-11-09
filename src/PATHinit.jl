@@ -43,9 +43,10 @@ include("neglogproblem.jl")
 prefix = randstring(5)
 
 seed = 1123
+Random.seed!(seed)
 
 #   RESOLUTION PARAMETERS
-nside = 256
+nside = 64
 lmax = 2*nside - 1
 
 MPI.Init()
@@ -75,13 +76,14 @@ end
 
 #   GENERATED DATA MEASUREMENTS
 #   Noise
-Random.seed!(1123)
-Bl = gaussbeam(0.001, lmax, pol=false)
-Pl = pixwin(nside, pol=false)[1:lmax+1]
-
 ϵ=1
 N = ϵ*ones(nside2npix(nside))
 N[mask_nside.==1] .= 5*10^4
+#   Gaussian beam and pixel window function
+Bl = gaussbeam(0.001, lmax, pol=false)
+Pl = pixwin(nside, pol=false)[1:lmax+1]
+BP_l = Bl.*Pl
+
 #   Data Map
 gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_Cl, Bl, Pl, mask_nside, N, nside, lmax, seed)
 gen_θ = vcat(x_vecmat2vec(from_healpix_alm_to_alm([gen_HAlm], lmax, 1, comm, root=root), lmax, 1, comm, root=root), Cl2Kl(gen_Cl))
@@ -99,8 +101,9 @@ HealpixMPI.Scatter!(invN_HMap, invN_DMap, comm, clear=true)
 
 helper_DMap = deepcopy(gen_DMap)
 
-nlp = nℓπ(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, Bl=Bl, Pl=Pl, ncore=ncore, comm=comm, root=root)
-nlp_grad = nℓπ_grad(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, invN=invN_DMap, Bl=Bl, Pl=Pl, ncore=ncore, comm=comm, root=root)
+nlp = nℓπ(start_θ, data=gen_DMap, helper_DMap=helper_DMap, lmax=lmax, nside=nside, BP_l=Bl.*Pl, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
+nlp_grad = nℓπ_grad(start_θ, data=gen_DMap,  helper_DMap=helper_DMap, lmax=lmax, nside=nside, BP_l=Bl.*Pl, invN=invN_DMap, ncore=ncore, comm=comm, root=root)
+
 
 #=
 ## BENCHMARKING POSTERIOR and POSTERIOR+GRADIENTS TIMINGS
@@ -108,6 +111,8 @@ MPI.Barrier(comm)
 nlp_bm = @be nℓπ(start_θ) samples=1000 evals=50 seconds=Inf
 MPI.Barrier(comm)
 nlp_grad_bm = @be nℓπ_grad(start_θ) samples=1000 evals=50 seconds=Inf
+print(mean(nlp_bm).time)
+print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
@@ -122,21 +127,11 @@ PF_problem = ADgradient(:Zygote, PF_LogTargetDensity(d))
 
 PF_seed = rand(1:10_000)
 Random.seed!(PF_seed)
-#PFinit_θ = Vector{Vector{Float64}}(undef, 5)
-#for i in 1:5
-#    PFinit_θ[i] = rand(MvNormal(start_θ,I))
-#end
-PFinit_θ = rand(MvNormal(start_θ,I))
+PFinit_θ = rand(MvNormal(start_θ,0.1*I))
 MPI.Barrier(comm)
 t0 = time()
 result = pathfinder(PF_problem, ndraws=10, init=PFinit_θ)
 PF_t = time()-t0
-
-#Checking goodness of PF initialization
-#PF_alm_0 = x_vec2vecmat(result.draws[1:end-lmax-1,end], lmax, 1, comm, root)
-#PF_map_0 = Healpix.alm2map(from_alm_to_healpix_alm(PF_alm_0, lmax, 1)[1], nside)
-
-#PF_start_θ = mean(result.draws, dims=2)[:,1]
 
 npzwrite("MPI_chains/$(prefix)_PATHinit_$(nside).npy", result.draws)
 

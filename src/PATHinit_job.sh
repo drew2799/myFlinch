@@ -3,7 +3,7 @@
 #SBATCH --account=rrg-wperciva
 #SBATCH --job-name=PATHinit
 #SBATCH --output=PATHinit.out
-#SBATCH --time=2:00:00
+#SBATCH --time=30:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem-per-cpu=100G
