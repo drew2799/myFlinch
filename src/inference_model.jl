@@ -1,6 +1,6 @@
-function NegLogLikelihood(sample_DAlm, helper_DMap, ncore, data, invN)
+function NegLogLikelihood(sample_DAlm, helper_DMap, ncore, data, invN, BP_l)
     
-    sample_DMap = alm2map(sample_DAlm, helper_DMap, ncore)
+    sample_DMap = alm2map(almxfl(sample_DAlm, BP_l), helper_DMap, ncore)
 
     REsample_DMap = DMapReparam(sample_DMap, invN)
     REgen_DMap = DMapReparam(data, invN)
@@ -15,9 +15,9 @@ function NegLogLikelihood(sample_DAlm, helper_DMap, ncore, data, invN)
     return loglike
 end
 
-function AlmPrior(sample_alm, sample_Kl, Bl, Pl, comm; lmax=lmax, root=0)
+function AlmPrior(sample_alm, sample_Kl, comm; lmax=lmax, root=0)
     
-    sample_Cl = (Bl.^2 .* Pl.^2).*Kl2Cl(sample_Kl, comm, root=root)
+    sample_Cl = Kl2Cl(sample_Kl, comm, root=root)
     
     p_alm0 = 0.5*sum(([sample_alm[l][1,1] for l in 1:lmax+1].^2)./sample_Cl) + 0.5*sum(log.(sample_Cl))
     p_alm = 0.
@@ -29,13 +29,13 @@ function AlmPrior(sample_alm, sample_Kl, Bl, Pl, comm; lmax=lmax, root=0)
     return p
 end
 
-@adjoint function AlmPrior(sample_alm, sample_Kl, Bl, Pl, comm; lmax=lmax, root=0)
+@adjoint function AlmPrior(sample_alm, sample_Kl, comm; lmax=lmax, root=0)
     
-    y = AlmPrior(sample_alm, sample_Kl, Bl, Pl, comm, lmax=lmax, root=root)
+    y = AlmPrior(sample_alm, sample_Kl, comm, lmax=lmax, root=root)
     
     function AlmPrior_PB(ȳ)
 
-        sample_Cl = (Bl.^2 .* Pl.^2).*Kl2Cl(sample_Kl, comm, root=root)
+        sample_Cl = Kl2Cl(sample_Kl, comm, root=root)
 
         adj_sample_alm = deepcopy(sample_alm)
         for l in 1:lmax+1
@@ -46,10 +46,10 @@ end
         adj_sample_Kl = zeros(lmax+1)
         for l in 1:lmax+1
             Al = (sample_alm[l][1,1]^2)/2 + sum(sample_alm[l][:,2:end].^2)
-            adj_sample_Kl[l] = ((l-0.5)/sample_Cl[l] - Al/(sample_Cl[l]^2))*1_500*pdf(Normal(0,1), sample_Kl[l])*(ȳ*Pl[l]^2*Bl[l]^2)
+            adj_sample_Kl[l] = ((l-0.5)/sample_Cl[l] - Al/(sample_Cl[l]^2))*1_500*pdf(Normal(0,1), sample_Kl[l])*ȳ
         end
         
-        return (adj_sample_alm, adj_sample_Kl, nothing, nothing, nothing, nothing, nothing)
+        return (adj_sample_alm, adj_sample_Kl, nothing, nothing, nothing)
     end
     return y, AlmPrior_PB
 end
@@ -75,7 +75,7 @@ end
     return pKl, KlPrior_PB
 end
 
-function NegLogPosterior(θ, comm, ncore, helper_DMap; data = gen_DMap, lmax=lmax, nside=nside, invN = invN_DMap, Bl=Bl, Pl=Pl, root = 0)
+function NegLogPosterior(θ, comm, ncore, helper_DMap; data = gen_DMap, lmax=lmax, nside=nside, invN = invN_DMap, BP_l=BP_l, root = 0)
 
     θ_length = length(θ)
 
@@ -90,8 +90,8 @@ function NegLogPosterior(θ, comm, ncore, helper_DMap; data = gen_DMap, lmax=lma
 
     sample_DAlm = HAlm2DAlm(sample_HAlm, comm; clear=true, root=root)
 
-    l = NegLogLikelihood(sample_DAlm, helper_DMap, ncore, data, invN)
-    p_alm = AlmPrior(sample_alm, sample_Kl, Bl, Pl, comm, lmax=lmax, root=root)
+    l = NegLogLikelihood(sample_DAlm, helper_DMap, ncore, data, invN, BP_l)
+    p_alm = AlmPrior(sample_alm, sample_Kl, comm, lmax=lmax, root=root)
     p_kl = KlPrior(sample_Kl, comm, root=root)
 
     nlpost = l+p_alm+p_kl
@@ -100,6 +100,15 @@ function NegLogPosterior(θ, comm, ncore, helper_DMap; data = gen_DMap, lmax=lma
 end
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------
+@adjoint function almxfl(DAlm, fl)
+    DWlm = almxfl(DAlm, fl)
+    function almxfl_PB(adj_DWlm)
+        adj_DAlm = almxfl(adj_DWlm, fl)
+        return (adj_DAlm, nothing)
+    end
+    return DWlm, almxfl_PB
+end
+
 function DMap_condslice(dmap, bool_cond)
     return dmap.pixels[bool_cond]
 end
