@@ -125,7 +125,7 @@ LogDensityProblemsAD.capabilities(::Type{LogTargetDensity}) = LogDensityProblems
 
 ℓπ = LogTargetDensity(d)
 n_LF = 50
-n_samples, n_adapts = 3_000, 2_000
+n_samples, n_adapts = 6_000, 5_000
 
 metric = DiagEuclideanMetric(d)
 ham = Hamiltonian(metric, ℓπ, Zygote)
