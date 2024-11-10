@@ -113,7 +113,7 @@ print(nlp_grad_bm)
 
 ## PATHFINDER INITIALIZATION
 
-prefix = "F7Tcj" 
+prefix = "Pxs0l" 
 PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity

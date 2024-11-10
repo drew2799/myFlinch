@@ -112,7 +112,7 @@ print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
-prefix = "F7Tcj" 
+prefix = "Pxs0l" 
 PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity
@@ -125,7 +125,7 @@ LogDensityProblemsAD.capabilities(::Type{LogTargetDensity}) = LogDensityProblems
 
 ℓπ = LogTargetDensity(d)
 n_LF = 50
-n_samples, n_adapts = 6_000, 5_000
+n_samples, n_adapts = 3_000, 2_000
 
 metric = DiagEuclideanMetric(d)
 ham = Hamiltonian(metric, ℓπ, Zygote)

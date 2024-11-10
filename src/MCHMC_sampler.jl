@@ -112,7 +112,7 @@ print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
-prefix = "F7Tcj"
+prefix = "Pxs0l"
 PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
 
 function MCHMCℓπ(θ)
