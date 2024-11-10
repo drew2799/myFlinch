@@ -13,10 +13,10 @@ function Realization(realiz_Cl_file, nside, lmax, seed)
     return realiz_Cl, realiz_HAlm, realiz_HMap
 end
 
-function Measurement(realiz_Cl, Bl, Pl, mask, noise, nside, lmax, seed)
+function Measurement(realiz_map, Bl, Pl, mask, noise, nside, lmax, seed)
 
-    Random.seed!(seed)
-    realiz_map = synfast(realiz_Cl.*(Bl.^2 .* Pl.^2), nside)
+    #Random.seed!(seed)
+    #realiz_map = synfast(realiz_Cl.*(Bl.^2 .* Pl.^2), nside)
 
     e = rand(MvNormal(zeros(nside2npix(nside)), Diagonal(noise)))
 

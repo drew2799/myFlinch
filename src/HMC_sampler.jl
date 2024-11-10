@@ -82,7 +82,7 @@ Pl = ones(length(realiz_Cl))#pixwin(nside, pol=false)[1:lmax+1]
 BP_l = Bl.*Pl
 
 #   Data Map
-gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_Cl, Bl, Pl, mask_nside, N, nside, lmax, seed)
+gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_HMap, Bl, Pl, mask_nside, N, nside, lmax, seed)
 gen_θ = vcat(x_vecmat2vec(from_healpix_alm_to_alm([gen_HAlm], lmax, 1, comm, root=root), lmax, 1, comm, root=root), Cl2Kl(gen_Cl))
 invN_HMap = HealpixMap{Float64,RingOrder}(1 ./ N)
 
