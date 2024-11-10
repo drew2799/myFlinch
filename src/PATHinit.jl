@@ -80,8 +80,8 @@ end
 N = ϵ*ones(nside2npix(nside))
 N[mask_nside.==1] .= 5*10^4
 #   Gaussian beam and pixel window function
-Bl = gaussbeam(0.001, lmax, pol=false)
-Pl = pixwin(nside, pol=false)[1:lmax+1]
+Bl = ones(length(realiz_Cl))#gaussbeam(0.001, lmax, pol=false)
+Pl = ones(length(realiz_Cl))#pixwin(nside, pol=false)[1:lmax+1]
 BP_l = Bl.*Pl
 
 #   Data Map
