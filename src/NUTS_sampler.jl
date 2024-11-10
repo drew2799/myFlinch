@@ -113,7 +113,7 @@ print(nlp_grad_bm)
 
 ## PATHFINDER INITIALIZATION
 
-prefix = 
+prefix = "F7Tcj" 
 PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity
@@ -133,7 +133,7 @@ initial_ϵ = find_good_stepsize(ham, PF_start_θ)
 integrator = Leapfrog(initial_ϵ)
 
 kernel = HMCKernel(Trajectory{MultinomialTS}(integrator, GeneralisedNoUTurn()))
-adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.9, integrator))
+adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.8, integrator))
 
 MPI.Barrier(comm)
 t0 = time()

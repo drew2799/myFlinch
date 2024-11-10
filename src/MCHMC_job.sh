@@ -6,7 +6,7 @@
 #SBATCH --time=1:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem-per-cpu=50G
+#SBATCH --mem=50G
 #SBATCH --mail-user=a2crespi@uwaterloo.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 

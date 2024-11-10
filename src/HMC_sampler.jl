@@ -112,7 +112,7 @@ print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
-prefix = 
+prefix = "F7Tcj" 
 PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity
