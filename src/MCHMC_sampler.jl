@@ -114,8 +114,8 @@ print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
-PF_prefix = "u1FUq5"
-PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end]
+PF_prefix = "1FUq5"
+PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end-1]
 
 function MCHMCℓπ(θ)
     return -nℓπ(θ) #ricorda -1
