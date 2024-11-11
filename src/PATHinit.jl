@@ -46,7 +46,7 @@ seed = 1123
 Random.seed!(seed)
 
 #   RESOLUTION PARAMETERS
-nside = 64
+nside = 256
 lmax = 2*nside - 1
 
 MPI.Init()

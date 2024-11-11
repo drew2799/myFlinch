@@ -3,10 +3,10 @@
 #SBATCH --account=rrg-wperciva
 #SBATCH --job-name=PATHinit
 #SBATCH --output=PATHinit.out
-#SBATCH --time=30:00
+#SBATCH --time=2:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=50G
+#SBATCH --mem=2000G
 #SBATCH --mail-user=a2crespi@uwaterloo.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 
