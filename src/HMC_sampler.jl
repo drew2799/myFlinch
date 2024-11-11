@@ -39,11 +39,13 @@ include("utils.jl")
 include("inference_model.jl")
 include("neglogproblem.jl")
 
+HMC_prefix = randstring(5)
+
 seed = 1123
 Random.seed!(seed)
 
 #   RESOLUTION PARAMETERS
-nside = 64
+nside = 256
 lmax = 2*nside - 1
 
 MPI.Init()
@@ -112,8 +114,8 @@ print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
-prefix = "uyjOH" 
-PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
+PF_prefix = "1FUq5" 
+PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity
     dim::Int
@@ -125,15 +127,15 @@ LogDensityProblemsAD.capabilities(::Type{LogTargetDensity}) = LogDensityProblems
 
 ℓπ = LogTargetDensity(d)
 n_LF = 50
-n_samples, n_adapts = 3_000, 2_000
+n_samples, n_adapts = 6_000, 5_000
 
 metric = DiagEuclideanMetric(d)
 ham = Hamiltonian(metric, ℓπ, Zygote)
-initial_ϵ = 0.1
+initial_ϵ = find_good_stepsize(ham, PF_start_θ) #0.1
 integrator = Leapfrog(initial_ϵ)
 
 kernel = HMCKernel(Trajectory{EndPointTS}(integrator, FixedNSteps(n_LF)))
-adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.65, integrator))
+adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.75, integrator))
 
 MPI.Barrier(comm)
 t0 = time()
@@ -141,11 +143,11 @@ samples_HMC, stats_HMC = sample(ham, kernel, PF_start_θ, n_samples, adaptor, n_
 MPI.Barrier(comm)
 HMC_t = time() - t0
 
-npzwrite("MPI_chains/mask_HMC_nside_$nside.npy", reduce(hcat, samples_HMC))
-npzwrite("MPI_chains/mask_HMC_stats_nside_$nside.npy", [[stats_HMC[i][:log_density] for i in 1:1_000] [stats_HMC[i][:hamiltonian_energy] for i in 1:1_000]])
+npzwrite("MPI_chains/$(HMC_prefix)_mask_HMC_nside_$nside.npy", reduce(hcat, samples_HMC))
+npzwrite("MPI_chains/$(HMC_prefix)_mask_HMC_stats_nside_$nside.npy", [[stats_HMC[i][:log_density] for i in 1:1_000] [stats_HMC[i][:hamiltonian_energy] for i in 1:1_000]])
 
 HMC_ess, HMC_rhat = Summarize(samples_HMC)
-npzwrite("MPI_chains/mask_HMC_EssRhat_nside_$nside.npy", [HMC_ess HMC_rhat])
-npzwrite("MPI_chains/mask_HMC_SumPerf_nside_$nside.npy", [HMC_t mean(HMC_ess) median(HMC_rhat)])
+npzwrite("MPI_chains/$(HMC_prefix)_mask_HMC_EssRhat_nside_$nside.npy", [HMC_ess HMC_rhat])
+npzwrite("MPI_chains/$(HMC_prefix)_mask_HMC_SumPerf_nside_$nside.npy", [HMC_t mean(HMC_ess) median(HMC_rhat)])
 
 MPI.Finalize()

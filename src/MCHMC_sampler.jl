@@ -39,11 +39,13 @@ include("utils.jl")
 include("inference_model.jl")
 include("neglogproblem.jl")
 
+MCHMC_prefix = randstring(5)
+
 seed = 1123
 Random.seed!(seed)
 
 #   RESOLUTION PARAMETERS
-nside = 64
+nside = 256
 lmax = 2*nside - 1
 
 MPI.Init()
@@ -112,8 +114,8 @@ print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
-prefix = "uyjOH"
-PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
+PF_prefix = "u1FUq5"
+PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end]
 
 function MCHMCℓπ(θ)
     return -nℓπ(θ) #ricorda -1
@@ -126,7 +128,7 @@ end
 
 target = CustomTarget(MCHMCℓπ, MCHMCℓπ_grad, PF_start_θ)
 
-n_adapts, n_steps = 2_000, 10_000
+n_adapts, n_steps = 5_000, 10_000
 spl = MicroCanonicalHMC.MCHMC(n_adapts, 0.001, integrator="LF", 
             adaptive=true, tune_eps=true, tune_L=false, eps=10.0, tune_sigma=false, L=sqrt(d), sigma=ones(d))
 
@@ -136,10 +138,10 @@ samples_MCHMC = Sample(spl, target, n_steps, init_params=PF_start_θ, dialog=tru
 MPI.Barrier(comm)
 MCHMC_t = time() - t0
 
-npzwrite("MPI_chains/mask_MCHMC_nside_$nside.npy", samples_MCHMC)
+npzwrite("MPI_chains/$(MCHMC_prefix)_mask_MCHMC_nside_$nside.npy", samples_MCHMC)
 
 MCHMC_ess, MCHMC_rhat = Summarize(samples_MCHMC')
-npzwrite("MPI_chains/mask_MCHMC_EssRhat_nside_$nside.npy", [MCHMC_ess MCHMC_rhat])
-npzwrite("MPI_chains/mask_MCHMC_SumPerf_nside_$nside.npy", [MCHMC_t mean(MCHMC_ess) median(MCHMC_rhat)])
+npzwrite("MPI_chains/$(MCHMC_prefix)_mask_MCHMC_EssRhat_nside_$nside.npy", [MCHMC_ess MCHMC_rhat])
+npzwrite("MPI_chains/$(MCHMC_prefix)_mask_MCHMC_SumPerf_nside_$nside.npy", [MCHMC_t mean(MCHMC_ess) median(MCHMC_rhat)])
 
 MPI.Finalize()

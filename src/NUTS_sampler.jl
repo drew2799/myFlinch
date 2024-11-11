@@ -39,11 +39,13 @@ include("utils.jl")
 include("inference_model.jl")
 include("neglogproblem.jl")
 
+NUTS_prefix = randstring(5)
+
 seed = 1123
 Random.seed!(seed)
 
 #   RESOLUTION PARAMETERS
-nside = 64
+nside = 256
 lmax = 2*nside - 1
 
 MPI.Init()
@@ -113,8 +115,8 @@ print(nlp_grad_bm)
 
 ## PATHFINDER INITIALIZATION
 
-prefix = "uyjOH" 
-PF_start_θ = npzread("MPI_chains/$(prefix)_PATHinit_$(nside).npy")[:,end]
+PF_prefix = "1FUq5" 
+PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity
     dim::Int
@@ -125,7 +127,7 @@ LogDensityProblemsAD.dimension(p::LogTargetDensity) = p.dim
 LogDensityProblemsAD.capabilities(::Type{LogTargetDensity}) = LogDensityProblemsAD.LogDensityOrder{1}()
 
 ℓπ = LogTargetDensity(d)
-n_samples, n_adapts = 1_100, 100
+n_samples, n_adapts = 1_500, 500
 
 metric = DiagEuclideanMetric(d)
 ham = Hamiltonian(metric, ℓπ, Zygote)
@@ -141,11 +143,11 @@ samples_NUTS, stats_NUTS = sample(ham, kernel, PF_start_θ, n_samples, adaptor, 
 MPI.Barrier(comm)
 NUTS_t = time() - t0
 
-npzwrite("MPI_chains/mask_NUTS_nside_$nside.npy", reduce(hcat, samples_NUTS))
-npzwrite("MPI_chains/mask_NUTS_stats_nside_$nside.npy", reduce(vcat, [[stats_NUTS[i][:log_density] for i in 1:1_000] [stats_NUTS[i][:hamiltonian_energy] for i in 1:1_000] [stats_NUTS[i][:tree_depth] for i in 1:1_000]]))
+npzwrite("MPI_chains/$(NUTS_prefix)_mask_NUTS_nside_$nside.npy", reduce(hcat, samples_NUTS))
+npzwrite("MPI_chains/$(NUTS_prefix)_mask_NUTS_stats_nside_$nside.npy", reduce(vcat, [[stats_NUTS[i][:log_density] for i in 1:1_000] [stats_NUTS[i][:hamiltonian_energy] for i in 1:1_000] [stats_NUTS[i][:tree_depth] for i in 1:1_000]]))
 
 NUTS_ess, NUTS_rhat = Summarize(samples_NUTS)
-npzwrite("MPI_chains/mask_NUTS_EssRhat_nside_$nside.npy", [NUTS_ess NUTS_rhat])
-npzwrite("MPI_chains/mask_NUTS_SumPerf_nside_$nside.npy", [NUTS_t mean(NUTS_ess) median(NUTS_rhat)])
+npzwrite("MPI_chains/$(NUTS_prefix)_mask_NUTS_EssRhat_nside_$nside.npy", [NUTS_ess NUTS_rhat])
+npzwrite("MPI_chains/$(NUTS_prefix)_mask_NUTS_SumPerf_nside_$nside.npy", [NUTS_t mean(NUTS_ess) median(NUTS_rhat)])
 
 MPI.Finalize()
