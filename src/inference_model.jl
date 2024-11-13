@@ -1,7 +1,7 @@
 function NegLogLikelihood(sample_DAlm, helper_DMap, ncore, data, invN, BP_l)
     
-    #sample_DMap = alm2map(almxfl(sample_DAlm, BP_l), helper_DMap, ncore)
-    sample_DMap = alm2map(sample_DAlm, helper_DMap, ncore)
+    sample_DMap = alm2map(almxfl(sample_DAlm, BP_l), helper_DMap, ncore)
+    #sample_DMap = alm2map(sample_DAlm, helper_DMap, ncore)
 
     REsample_DMap = DMapReparam(sample_DMap, invN)
     REgen_DMap = DMapReparam(data, invN)
