@@ -1,6 +1,6 @@
 function Realization(realiz_Cl_file, nside, lmax, seed)
 
-    Random.seed!(seed)
+    #Random.seed!(seed)
 
     realiz_Dl = CSV.read(realiz_Cl_file, DataFrame)[1:lmax-1,1]
     realiz_Cl = dl2cl(realiz_Dl, 2)

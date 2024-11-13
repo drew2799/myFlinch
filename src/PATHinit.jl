@@ -76,7 +76,7 @@ end
 
 #   GENERATED DATA MEASUREMENTS
 #   Noise
-ϵ=1
+ϵ=100
 N = ϵ*ones(nside2npix(nside))
 N[mask_nside.==1] .= 5*10^4
 #   Gaussian beam and pixel window function
