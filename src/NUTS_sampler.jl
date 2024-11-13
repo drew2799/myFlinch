@@ -84,7 +84,7 @@ Pl = ones(length(realiz_Cl))#pixwin(nside, pol=false)[1:lmax+1]
 BP_l = Bl.*Pl
 
 #   Data Map
-gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_HMap, Bl, Pl, mask_nside, N, nside, lmax, seed)
+gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_Cl, Bl, Pl, mask_nside, N, nside, lmax, seed)
 gen_θ = vcat(x_vecmat2vec(from_healpix_alm_to_alm([gen_HAlm], lmax, 1, comm, root=root), lmax, 1, comm, root=root), Cl2Kl(gen_Cl))
 invN_HMap = HealpixMap{Float64,RingOrder}(1 ./ N)
 
@@ -115,8 +115,8 @@ print(nlp_grad_bm)
 
 ## PATHFINDER INITIALIZATION
 
-PF_prefix = "1FUq5" 
-PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end-2]
+PF_prefix = "jmUzm" 
+PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end]
 
 struct LogTargetDensity
     dim::Int
@@ -135,7 +135,7 @@ initial_ϵ = find_good_stepsize(ham, PF_start_θ)
 integrator = Leapfrog(initial_ϵ)
 
 kernel = HMCKernel(Trajectory{MultinomialTS}(integrator, GeneralisedNoUTurn()))
-adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.8, integrator))
+adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.95, integrator))
 
 MPI.Barrier(comm)
 t0 = time()

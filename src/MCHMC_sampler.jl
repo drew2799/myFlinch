@@ -84,7 +84,7 @@ Pl = ones(length(realiz_Cl))#pixwin(nside, pol=false)[1:lmax+1]
 BP_l = Bl.*Pl
 
 #   Data Map
-gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_HMap, Bl, Pl, mask_nside, N, nside, lmax, seed)
+gen_Cl, gen_HAlm, gen_HMap = Measurement(realiz_Cl, Bl, Pl, mask_nside, N, nside, lmax, seed)
 gen_θ = vcat(x_vecmat2vec(from_healpix_alm_to_alm([gen_HAlm], lmax, 1, comm, root=root), lmax, 1, comm, root=root), Cl2Kl(gen_Cl))
 invN_HMap = HealpixMap{Float64,RingOrder}(1 ./ N)
 
@@ -114,8 +114,8 @@ print(mean(nlp_grad_bm).time)
 =#
 
 ## PATHFINDER INITIALIZATION
-PF_prefix = "1FUq5"
-PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end-2]
+PF_prefix = "jmUzm"
+PF_start_θ = npzread("MPI_chains/$(PF_prefix)_PATHinit_$(nside).npy")[:,end]
 
 function MCHMCℓπ(θ)
     return -nℓπ(θ) #ricorda -1
@@ -128,7 +128,7 @@ end
 
 target = CustomTarget(MCHMCℓπ, MCHMCℓπ_grad, PF_start_θ)
 
-n_adapts, n_steps = 5_000, 10_000
+n_adapts, n_steps = 2_000, 10_000
 spl = MicroCanonicalHMC.MCHMC(n_adapts, 0.001, integrator="LF", 
             adaptive=true, tune_eps=true, tune_L=false, eps=10.0, tune_sigma=false, L=sqrt(d), sigma=ones(d))
 
